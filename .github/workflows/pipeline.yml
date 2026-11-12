@@ -1,0 +1,93 @@
+name: Matriz de criticidad - Validación CI
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      publicar:
+        description: 'Publicar sitio en GitHub Pages (requiere activar Pages)'
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  construir:
+    name: 1 - BUILD / Preparar sitio
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v6
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Generar sitio estático
+        run: npm run build
+      - name: Guardar el resultado de la construcción
+        uses: actions/upload-artifact@v4
+        with:
+          name: sitio-web
+          path: dist/
+
+  probar:
+    name: 2 - TEST / Validar lógica
+    needs: construir
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v6
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Ejecutar validaciones
+        run: npm test
+
+  seguridad:
+    name: 3 - SECURITY / Revisar patrones
+    needs: probar
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener el código
+        uses: actions/checkout@v6
+      - name: Configurar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Ejecutar revisión estática
+        run: npm run security
+
+  publicar:
+    name: 4 - DEPLOY / Publicar (opcional)
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publicar == true }}
+    needs: [construir, probar, seguridad]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - name: Recuperar el sitio construido
+        uses: actions/download-artifact@v4
+        with:
+          name: sitio-web
+          path: dist/
+      - name: Preparar GitHub Pages
+        uses: actions/configure-pages@v5
+      - name: Empaquetar el sitio para Pages
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist/
+      - name: Publicar la aplicación
+        id: despliegue
+        uses: actions/deploy-pages@v4

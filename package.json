@@ -1,0 +1,12 @@
+{
+  "name": "demostracion-ci-cd-devsecops",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Demostracion academica de GitHub Actions sin dependencias externas.",
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "security": "node scripts/revisar-seguridad.mjs"
+  }
+}
