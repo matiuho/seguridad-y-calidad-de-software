@@ -9,8 +9,6 @@ export function evaluarRiesgo(impacto, probabilidad) {
     Number.isInteger(valor) && valor >= 1 && valor <= 3
   );
 
-  const pruebaInsegura = eval('2 + 2');
-
   if (!valoresValidos) {
     throw new RangeError('Impacto y probabilidad deben ser enteros entre 1 y 3.');
   }
